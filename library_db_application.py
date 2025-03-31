@@ -453,8 +453,7 @@ def volunteer_library():
 
     print(f"\n✅ Thank you! You are now registered as a library volunteer starting from {employment_date}.")
 
-
-
+# Ask for help from librarian 
 def ask_librarian():
     while True:
         print("\n\n---------------------------------------")
@@ -484,7 +483,7 @@ def ask_librarian():
         else:
             print("\n❌ Invalid input. Please enter a number from 1 to 5.")
 
-# Function to apply to become a librarian
+# Apply to become a librarian
 def apply_librarian():
     print("\n\n---------------------------------------")
     print("\n\n📖 How to Apply as a Librarian:")
@@ -543,7 +542,7 @@ def check_fines():
         print("\n❌ No borrowing records found for this email.")
         return
 
-    # Retrieve fines for the borrowIDs
+    # Retrieve fines for correspongding borrow transactions
     total_fines = 0
     for borrow_id in borrow_ids:
         cursor.execute("SELECT SUM(amount) FROM Fines WHERE borrowID = ?", (borrow_id[0],))
@@ -651,7 +650,7 @@ def recommend_events():
             break
         print("\n❌ Invalid choice. Please enter a number between 1 and 6.")
 
-    # Get events based on target audience
+    # Get events based on target audience (input)
     cursor.execute("""
         SELECT eventID, name, scheduledDate, scheduledTime
         FROM Events
