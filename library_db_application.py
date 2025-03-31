@@ -4,13 +4,9 @@ from datetime import date
 from datetime import datetime
 import re
 
-# conn = sqlite3.connect("C:\\Users\\Admin\\OneDrive\\Desktop\\CMPT 354\\miniproject\\miniproject\\library.db")
 db_path = Path("library.db").resolve()
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
-
-print("\nSup loser, checking out a library database because you have no friends?")
-print("nI figured, anyways have fun ig")
 
 # Make sure input is nonempty
 def nonEmpty(prompt):
@@ -18,7 +14,23 @@ def nonEmpty(prompt):
         value = input(prompt).strip()
         if value:
             return value
-        print("Input cannot be empty. Please try again.\n")
+        print("❌ Input cannot be empty. Please try again.\n")
+        
+# Helper function: Valid email
+def get_valid_email():
+    while True:
+        email = input("\nEnter your email: ")
+        if re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", email):
+            return email
+        print("\n❌ Invalid email format. Please enter a valid email.")
+
+# Helper function: Valid date
+def get_valid_date(prompt):
+    while True:
+        date_input = input(prompt)
+        if re.match(r"^\d{4}-\d{2}-\d{2}$", date_input):
+            return date_input
+        print("\n❌ Invalid date format. Please use YYYY-MM-DD.")
         
 # Checks if someone has a membership
 def check_membership():
@@ -28,12 +40,10 @@ def check_membership():
     
     # User response: n
     if answer == 'n':
-        print("\nReally? Ok time to sign up ig")
         create_membership()
         return True 
     # User response: y
     elif answer == 'y':
-        print("Of course you do hahaha")
         email = input("Please enter your email: ")
         query = "SELECT * FROM Member WHERE email = ?"
         cursor.execute(query, (email,))
@@ -63,20 +73,20 @@ def create_membership():
         birthday = input("Enter your full birthday in this format (YYYY-MM-DD): ")
         if re.match(r"^\d{4}-\d{2}-\d{2}$", birthday):
             break
-        print("\nInvalid date format. Please enter in YYYY-MM-DD format.")
+        print("\n❌ Invalid date format. Please enter in YYYY-MM-DD format.")
 
     # Email format: @
     while True:
         email = input("Enter your email: ")
 
         if not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", email):
-            print("\nInvalid email. Please enter a valid email address.")
+            print("\n❌ Invalid email. Please enter a valid email address.")
             continue  # Restart email input
 
         # If entered email already in db -> Retry 
         cursor.execute("SELECT email FROM Member WHERE email = ?", (email,))
         if cursor.fetchone():
-            print("\nThis email is already registered.\nRedirecting to membership check...")
+            print("\n❌ This email is already registered.\nRedirecting to membership check...")
             check_membership()
             return
 
@@ -88,7 +98,7 @@ def create_membership():
     cursor.execute(query, (name, birthday, email))
     conn.commit()
 
-    print(f"\nMembership created successfully for {name}. Welcome to our library!")
+    print(f"\n✅ Membership created successfully for {name}. Welcome to our library!")
 
 # Define library functions
 def introPage():
@@ -107,7 +117,7 @@ def introPage():
 
 # Finds item
 def find_item():
-    print("\nPlease enter either the Name, Author, or Genre of the item you're looking for: ")
+    print("\n\nPlease enter either the Name, Author, or Genre of the item you're looking for: ")
     item_type = input("(1) Name, (2) Author, (3) Genre: ")
 
     if item_type == '1':
@@ -120,7 +130,7 @@ def find_item():
         search_value = input('Enter the genre (partial match allowed): ')
         query = 'SELECT itemID FROM Item WHERE genre LIKE ?'
     else:
-        print('Invalid choice')
+        print('❌ Invalid choice')
         return
     
     # Search
@@ -145,7 +155,7 @@ def find_item():
 
         # Print available items
         if available_items:
-            print("\nAvailable Items:")
+            print("\n✅ Available Items:")
             for item in available_items:
                 print(f"ItemID: {item[0]}, Name: {item[1]}, Author: {item[2]}, Category: {item[3]}, Genre: {item[4]}, Status: {item[5]}")
         else:
@@ -153,14 +163,14 @@ def find_item():
 
         # Print unavailable items
         if unavailable_items:
-            print("\nUnavailable Items:")
+            print("\n❌ Unavailable Items:")
             for item in unavailable_items:
                 print(f"ItemID: {item[0]}, Name: {item[1]}, Author: {item[2]}, Category: {item[3]}, Genre: {item[4]}, Status: {item[5]}")
         else:
             print("\nNo unavailable items found.")
 
     else:
-        print("\nNo item found matching your search input :(")
+        print("\n❌ No item found matching your search input :(")
 
 
 
@@ -172,7 +182,7 @@ def borrow_item():
     cursor.execute("SELECT * FROM Member WHERE email = ?", (email,))
     member = cursor.fetchone()
     if not member:
-        print("\nNo membership found with this email. Please create a membership first.")
+        print("\n❌ No membership found with this email. Please create a membership first.")
         return
 
     # Ask for itemID
@@ -181,19 +191,19 @@ def borrow_item():
             item_id = int(input("Enter the item ID: "))
             break
         except ValueError:
-            print("Invalid input! Please enter a numeric item ID.")
+            print("❌ Invalid input! Please enter a numeric item ID.")
 
     # Check item status
     cursor.execute("SELECT status FROM Item WHERE itemID = ?", (item_id,))
     item = cursor.fetchone()
     # Item doesn't exist
     if item is None:
-        print("\nItem not found.")
+        print("\n❌ Item not found.")
         return
     status = item[0]
     # Item currently unavailable
     if status == 'Unavailable':
-        print("\nThe item is currently Unavailable for borrowing.")
+        print("\n❌ The item is currently unavailable for borrowing.")
         return
 
     # New borrow transaction
@@ -222,7 +232,7 @@ def borrow_item():
     cursor.execute("SELECT name FROM Item WHERE itemID = ?", (item_id,))
     item_name = cursor.fetchone()[0]
 
-    print(f"\nSuccess! You borrowed '{item_name}'.")
+    print(f"\n✅ Success! You borrowed '{item_name}'.")
     print(f"Return Date: {return_date}")
         
 
@@ -234,7 +244,7 @@ def return_item():
     cursor.execute("SELECT * FROM Member WHERE email = ?", (email,))
     member = cursor.fetchone()
     if not member:
-        print("\nNo membership found with this email.")
+        print("\n❌ No membership found with this email.")
         return
 
     # (If exists) print all borrowed items 
@@ -247,10 +257,10 @@ def return_item():
     borrowed_items = cursor.fetchall()
     
     if not borrowed_items:
-        print("\nYou have no borrowed items.")
+        print("\n❌ You have no borrowed items.")
         return
     
-    print("\nYour borrowed items:")
+    print("\n📌 Your borrowed items:")
     for item in borrowed_items:
         print(f"- {item[0]}: {item[1]}")
     
@@ -262,7 +272,7 @@ def return_item():
     borrow_record = cursor.fetchone()
     
     if borrow_record is None:
-        print("\nYou have not borrowed this item or it does not exist.")
+        print("\n❌ You have not borrowed this item or it does not exist.")
         return
     
     borrow_id = borrow_record[0] 
@@ -285,8 +295,7 @@ def return_item():
     cursor.execute("SELECT name FROM Item WHERE itemID = ?", (item_id,))
     item_name = cursor.fetchone()[0]
     
-    print(f"\nSuccess! You returned '{item_name}'.")
-    print(f"Return Date: {return_date}")
+    print(f"\n✅ Success! You returned '{item_name}'.")
 
 # Donates item (add item)
 def donate_item():
@@ -303,7 +312,7 @@ def donate_item():
     conn.commit()
 
     # Success output
-    print(f"\nSuccessfully donated the item: '{full_name}' by {author}.")
+    print(f"\n✅ Successfully donated the item: '{full_name}' by {author}.")
     print("It is now available in the library!")
 
 # Prints past and future events
@@ -317,7 +326,7 @@ def find_events():
     events = cursor.fetchall()
 
     if not events:
-        print("\nNo events found.")
+        print("\n❌ No events found.")
         return
 
     # Get future and past events
@@ -333,7 +342,7 @@ def find_events():
 
     def print_events(title, event_list):
         if not event_list:
-            print(f"\nNo {title.lower()} events found.")
+            print(f"\n❌ No {title.lower()} events found.")
             return
 
         print(f"\n{title}")
@@ -347,8 +356,8 @@ def find_events():
         print("-" * 90)
 
     # Print
-    print_events("\nUpcoming Events", future_events)
-    print_events("Past Events", past_events)
+    print_events("\n✅ Upcoming Events", future_events)
+    print_events("❌ Past Events", past_events)
 
 # Registers member for event
 def register_event():
@@ -358,7 +367,7 @@ def register_event():
     cursor.execute("SELECT * FROM Member WHERE email = ?", (email,))
     member = cursor.fetchone()
     if not member:
-        print("\nNo membership found with this email. Please create a membership first.")
+        print("\n❗ No membership found with this email. Please create a membership first.")
         return
 
     # Get eventID and its details
@@ -374,7 +383,7 @@ def register_event():
 
     # Check if event exists
     if event is None:
-        print("\nEvent not found.")
+        print("\n❌ Event not found.")
         return
 
     # If it does -> Get details
@@ -383,7 +392,7 @@ def register_event():
     # Make sure event is in future
     event_date = datetime.strptime(scheduled_date, "%Y-%m-%d").date()
     if event_date < datetime.today().date():
-        print(f"\nYou cannot register for '{event_name}' because the event has already passed.")
+        print(f"\n❌ You cannot register for '{event_name}' because the event has already passed.")
         return
 
     # Display event details
@@ -398,9 +407,9 @@ def register_event():
     try:
         cursor.execute("INSERT INTO Attends (email, eventID) VALUES (?, ?)", (email, event_id))
         conn.commit()
-        print(f"\nSuccess! You are now registered for '{event_name}'\n\t- Time: {scheduled_time}\n\t- Date: {scheduled_date}\n\t- Room Number: {room_num}.")
+        print(f"\n✅ Success! You are now registered for '{event_name}'\n\t- ⏰ Time: {scheduled_time}\n\t- Date: 📅 {scheduled_date}\n\t- #️⃣ Room Number: {room_num}.")
     except sqlite3.IntegrityError:
-        print("\nYou are already registered for this event.")
+        print("\n❗ You are already registered for this event.")
 
 
 # Volunteer for library
@@ -412,25 +421,25 @@ def volunteer_library():
         email = input("Enter your email: ")
 
         if not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", email):
-            print("\nInvalid email. Please enter a valid email address.")
+            print("\n❌ Invalid email. Please enter a valid email address.")
             continue
 
         # Check: Member
         cursor.execute("SELECT email FROM Member WHERE email = ?", (email,))
         if not cursor.fetchone():
-            print("\nYou must be a registered library member to volunteer.")
+            print("\n❗ You must be a registered library member to volunteer.")
             return 
 
         # Check: Member is volunteer?
         cursor.execute("SELECT email FROM Volunteer WHERE email = ?", (email,))
         if cursor.fetchone():
-            print("\nYou are already registered as a volunteer.")
+            print("\n❗ You are already registered as a volunteer.")
             return
 
         # Check: Member is staff?
         cursor.execute("SELECT email FROM Staff WHERE email = ?", (email,))
         if cursor.fetchone():
-            print("\nYou cannot volunteer as you are already registered as a staff member.")
+            print("\n❗ You cannot volunteer as you are already registered as a staff member.")
             return 
 
         break
@@ -442,12 +451,13 @@ def volunteer_library():
     cursor.execute(query, (email, employment_date))
     conn.commit()
 
-    print(f"\nThank you! You are now registered as a library volunteer starting from {employment_date}.")
+    print(f"\n✅ Thank you! You are now registered as a library volunteer starting from {employment_date}.")
 
 
 
 def ask_librarian():
     while True:
+        print("\n\n---------------------------------------")
         print("\n📚 Ask the Librarian:")
         print("1. How do I apply to become a librarian?")
         print("2. Do I have any outstanding fines?")
@@ -462,6 +472,8 @@ def ask_librarian():
         elif choice == "2":
             check_fines()
         elif choice == "3":
+            print("\n\n---------------------------------------")
+            print("\n\nPay Your Fines!")
             email = get_valid_email()
             pay_fines(email)
         elif choice == "4":
@@ -473,17 +485,17 @@ def ask_librarian():
             print("\n❌ Invalid input. Please enter a number from 1 to 5.")
 
 # Function to apply to become a librarian
-# Function to apply to become a librarian (or other staff positions)
 def apply_librarian():
-    print("\n📖 How to Apply as a Librarian:")
+    print("\n\n---------------------------------------")
+    print("\n\n📖 How to Apply as a Librarian:")
     print("To apply, please provide the following details.")
 
     email = get_valid_email()
 
-    # Check if email already exists in Staff table
+    # Check: If member already staff
     cursor.execute("SELECT email FROM Staff WHERE email = ?", (email,))
     if cursor.fetchone():
-        print("\nYou are already a staff member!")
+        print("\n❗ You are already a staff member!")
         return
 
     employment_date = get_valid_date("Enter your employment start date (YYYY-MM-DD): ")
@@ -517,8 +529,10 @@ def apply_librarian():
     print(f"\n✅ Application successful! You are now a {position} earning ${wage}/year.")
 
 
-# Function to check fines
+# Check fines
 def check_fines():
+    print("\n\n---------------------------------------")
+    print("\n\nCheck my fines:")
     email = get_valid_email()
 
     # Get borrowIDs linked to the email
@@ -526,7 +540,7 @@ def check_fines():
     borrow_ids = cursor.fetchall()
 
     if not borrow_ids:
-        print("\n✅ No borrowing records found for this email.")
+        print("\n❌ No borrowing records found for this email.")
         return
 
     # Retrieve fines for the borrowIDs
@@ -546,6 +560,7 @@ def check_fines():
 
 # Function to pay fines
 def pay_fines(email):
+    print("\n\n---------------------------------------")
     cursor.execute("""
         SELECT F.borrowID, F.amount
         FROM Fines F
@@ -556,7 +571,7 @@ def pay_fines(email):
     fines = cursor.fetchall()
 
     if not fines:
-        print("\n✅ No fines to pay!")
+        print("\n\n✅ No fines to pay!")
         return
 
     total_fine = sum(fine[1] for fine in fines)
@@ -571,7 +586,7 @@ def pay_fines(email):
             elif amount > total_fine:
                 print("\n❌ You cannot overpay. Enter a valid amount.")
             else:
-                # Deduct the payment from fines, updating status to "Paid" when amount reaches 0
+                # Deduct payment amount from fines -> When amount=0 -> status=paid !!!
                 for borrow_id, fine_amount in fines:
                     if amount <= 0:
                         break
@@ -589,13 +604,13 @@ def pay_fines(email):
                             SET amount = amount - ?
                             WHERE borrowID = ?
                         """, (amount, borrow_id))
-                        amount = 0  # All the amount is used up
+                        amount = 0 
 
                 conn.commit()
 
                 print("\n✅ Payment successful! Your updated fine status has been recorded.")
 
-                # Check if all fines are now fully paid
+                # Dont pay if your fines are already paid or you dont have any
                 cursor.execute("""
                     SELECT SUM(amount)
                     FROM Fines
@@ -611,26 +626,10 @@ def pay_fines(email):
         except ValueError:
             print("\n❌ Invalid input. Please enter a numeric value.")
 
-
-# Helper function to get valid email
-def get_valid_email():
-    while True:
-        email = input("\nEnter your email: ")
-        if re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", email):
-            return email
-        print("\nInvalid email format. Please enter a valid email.")
-
-# Helper function to get valid date
-def get_valid_date(prompt):
-    while True:
-        date_input = input(prompt)
-        if re.match(r"^\d{4}-\d{2}-\d{2}$", date_input):
-            return date_input
-        print("\nInvalid date format. Please use YYYY-MM-DD.")
-
-# Function to recommend events based on target audience
+# Recommend events based on target audience
 def recommend_events():
-    print("\n🎭 Discover Events Based on Your Interests!")
+    print("\n\n---------------------------------------")
+    print("\n\n🎭 Discover Events Based on Your Interests!")
     print("Please select a category that best suits you:")
 
     audience_options = {
@@ -652,7 +651,7 @@ def recommend_events():
             break
         print("\n❌ Invalid choice. Please enter a number between 1 and 6.")
 
-    # Fetch events matching the selected target audience
+    # Get events based on target audience
     cursor.execute("""
         SELECT eventID, name, scheduledDate, scheduledTime
         FROM Events
@@ -665,7 +664,7 @@ def recommend_events():
         print("\n❌ No events found for your selected category.")
         return
 
-    print(f"\n📅 Upcoming Events for '{target_audience}':")
+    print(f"\n📅 Events for '{target_audience}':")
     for event in events:
         event_id, name, date, time = event
         print(f"\n🆔 Event ID: {event_id}")
@@ -673,20 +672,18 @@ def recommend_events():
         print(f"📅 Date: {date}")
         print(f"⏰ Time: {time}")
 
-    # Ask the user if they want to sign up
+    # Asks if wants to sign up for event (shortcut)
     while True:
-        sign_up = input("\nWould you like to sign up for an event? (yes/no): ").strip().lower()
-        if sign_up == "yes":
+        sign_up = input("\nWould you like to sign up for an event? (y/n): ").strip().lower()
+        if sign_up == "y":
             register_event()
-        elif sign_up == "no":
-            print("\n✅ No problem! Enjoy your day.")
+        elif sign_up == "n":
+            print("\n🤧 No problem! 🤧🤧 Enjoy your day.")
             break
         else:
-            print("\n❌ Invalid input. Please enter 'yes' or 'no'.")
+            print("\n❌ Invalid input. Please try again.")
 
-
-
-
+# Choose options
 def user_question(option):
     print("\n\n---------------------------------------")
     if option == '1': 
@@ -707,18 +704,21 @@ def user_question(option):
         ask_librarian()
 
 
-
-# Check membership first before proceeding
+# Check if member
 membership_verified = check_membership()
 
+# If they have membership -> Continue
 if membership_verified:
-    # Once the membership is verified or created, show the menu
     user_choice = introPage()
 
     while user_choice != '9':
-        user_question(user_choice)
+        if user_choice in {'1', '2', '3', '4', '5', '6', '7', '8'}:
+            user_question(user_choice)
+        else:
+            print("\n❌ Invalid choice! Please enter a number between 1 and 9.")
+
         user_choice = introPage()
 
-    print('Thanks for using our library database, cya later nerd XD')
+    print('Thanks for using our library database!')
 
 conn.close()
